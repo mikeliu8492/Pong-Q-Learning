@@ -1,9 +1,37 @@
+import java.awt.Color;
+import java.awt.Graphics;
 import java.util.*;
+import javax.swing.*;
 
 
-
-public class GameSession 
+public class GameSession
 {
+	
+	
+	/**
+	 * DIMENSION, basic dimension of the board
+	 * RADIUS - radius of the ball for presentation purposes
+	 * THICKNESS - thickness of paddle bar
+	 */
+	private static int DIMENSION = 400;
+	private static int RADIUS = 10;
+	private static int THICKNESS = 5;
+	
+	private static int sleepTime = 50;
+	
+	private static double X_VELOCITY_CAP = 0.9;
+	private static double Y_VELOCITY_CAP = 0.9;
+	
+	private static double MAX_VELOCITY_X_TOLERABLE = 0.99;
+	private static double MAX_VELOCITY_Y_TOLERABLE = 0.99;
+	
+	//JFrame and JPanel of GUI
+	private JFrame gameFrame;
+	private JPanel gameGUI;
+	
+	//boolean to enable or disable GUI display
+	private boolean displayGUI; 
+	
 	/*
 	maximum number of discrete row/column/paddle positions
 	*/
@@ -40,8 +68,10 @@ public class GameSession
 	 * 
 	 * @param maxUnits		Units of representation of row/column and paddle positions.
 	 */
-	public GameSession(int maxUnits)
+	public GameSession(int maxUnits, boolean displayGame)
 	{
+		this.displayGUI = displayGame;
+		
 		this.MAX_UNITS = maxUnits;
 		
 		this.xVelocity = 0.03;
@@ -51,6 +81,23 @@ public class GameSession
 		this.yPosition = 0.5;
 		
 		this.paddlePosition = 0.5 - PADDLE_HEIGHT/2;
+		
+		
+		//in Constructor, if bool true then activate and display GUI
+		if (this.displayGUI)
+		{
+			gameFrame = new JFrame();
+			gameFrame.setTitle("Pong");
+			gameFrame.setLocationRelativeTo(null);
+			gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			gameFrame.setSize(DIMENSION+100, DIMENSION + 100);
+			gameFrame.setVisible(true);
+			
+			//create JPanel showing the game and add it to JFrame
+			gameGUI = new GameEngine();
+			gameFrame.add(gameGUI);
+			gameGUI.repaint();
+		}
 	}
 	
 	/**
@@ -76,21 +123,21 @@ public class GameSession
 				this.xVelocity = newVelocityX(this.xVelocity);
 				
 				//cap the x and y velocities
-				if(Math.abs(this.xVelocity) >= 1)
+				if(Math.abs(this.xVelocity) > MAX_VELOCITY_X_TOLERABLE )
 				{
 					if(this.xVelocity > 0)
-						this.xVelocity = 0.9;
+						this.xVelocity = X_VELOCITY_CAP;
 					else
-						this.xVelocity = -0.9;
+						this.xVelocity = -X_VELOCITY_CAP;
 				}
 				
 				this.yVelocity = newVelocityY(this.yVelocity);
-				if(Math.abs(this.yVelocity) >= 1)
+				if(Math.abs(this.yVelocity) >= MAX_VELOCITY_Y_TOLERABLE)
 				{
 					if(this.yVelocity > 0)
-						this.yVelocity = 0.9;
+						this.yVelocity = Y_VELOCITY_CAP;
 					else
-						this.yVelocity = -0.9;
+						this.yVelocity = -Y_VELOCITY_CAP;
 				}
 				
 				//increment your bounces
@@ -155,7 +202,8 @@ public class GameSession
 			this.xVelocity = -this.xVelocity;
 		}
 		
-		
+		if(this.displayGUI)
+			gameGUI.repaint();
 	}
 	
 	
@@ -326,7 +374,7 @@ public class GameSession
 	
 	
 	/**
-	 * Displays a 20x20 ascii representation of the game screen.
+	 * Displays a 20x20 ascii representation of the game screen.  Deprecated
 	 */
 	public void displayAnimation()
 	{
@@ -386,4 +434,77 @@ public class GameSession
 	{
 		return this.xVelocity > 0;
 	}
+	
+	
+	/**
+	 * JPanel actually displaying the game itself.
+	 * @author mikeliu8492
+	 *
+	 */
+	@SuppressWarnings("serial")
+	public class GameEngine extends JPanel
+	{
+		
+		public GameEngine() 
+		{
+			super();
+			this.setBackground(Color.WHITE);
+			this.setVisible(true);
+		}
+		
+		@Override
+		public void paintComponent(Graphics g) 
+		{
+			super.paintComponent(g);
+			
+			//set dimensions
+			int xCoordinate = (int) (DIMENSION*xPosition);
+			int yCoordinate = (int) (DIMENSION*yPosition);
+			int currentBottom = (int) (DIMENSION*paddlePosition);
+			
+			//set bottom boundary
+			g.setColor(Color.BLACK);
+			g.fillRect(0+50, 400+50, 400, THICKNESS);
+			g.fillRect(0+50, 0+50, 400, THICKNESS);
+			g.fillRect(0+50, 0+50, THICKNESS, 400);
+			
+			//set ball position
+			g.setColor(Color.RED);
+			g.fillOval(xCoordinate+50, yCoordinate+50, RADIUS, RADIUS);	
+			
+			//set rectangle position
+			g.setColor(Color.BLUE);
+			g.fillRect(400+50, currentBottom+50, THICKNESS, 80);
+			
+			if(getGameOver())
+			{
+				String message = "GAME OVER!  Bounces:  " + bouncesThisGame();
+				g.setColor(Color.BLACK);
+				g.drawString(message, 200, 250);
+			}
+
+		}
+		
+	}
+	
+	
+	/**
+	 * Repaints the JPanel to show animation.
+	 * @throws InterruptedException
+	 */
+	public void repaintWindow() throws InterruptedException
+	{
+		gameGUI.removeAll();
+		gameGUI.setBackground(Color.WHITE);
+		Thread.sleep(sleepTime);
+		gameGUI.repaint();
+	}
+	
+	public void closeGUI()
+	{
+		gameFrame.setVisible(false);
+		gameFrame.dispose();
+	}
+	
+	
 }

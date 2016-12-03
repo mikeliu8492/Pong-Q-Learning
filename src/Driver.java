@@ -1,8 +1,16 @@
+
 import java.util.*;
 
 
 public class Driver 
 {
+	/*
+	 * Keep this as true to enable viewing of GUI for one game.
+	 * 
+	 * */
+	private static boolean ENABLE_VISUAL = true;
+	private static int VISUAL_TRIALS = 20;
+	private static int SECONDS_BETWEEN_GAMES = 5;
 
 	
 	/**
@@ -21,18 +29,22 @@ public class Driver
 	 * 						  this threshold, then action form state is chosen at random amongst states that 
 	 * 						  have fewer attempts than this threshold.  Otherwise, action is picked based on
 	 * 						  maximum utility.
+	 * @BIG_REWARD - reward for bouncing on paddle
+	 * @BIG_PUNISHMENT - negative reinforcement for losing the game
 	 */
 	private static double GAMMA = 0.9;
 	private static int LEARN_RATE = 100000;
 	private static int MAX_ATTEMPT_EXPLORE = 50;
 	
+	private static int BIG_REWARD = 1;
+	private static int BIG_PUNISHMENT = -1;
 	
 	/**
 	 * Constants for # of training and testing games.  Training mode is disabled
 	 * in TESTING_GAMES, meaning these games will only use exploitation.
 	 */
 	private static int TRAINING_GAMES = 200000;
-	private static int TESTING_GAMES = 2000;
+	private static int TESTING_GAMES = 1000;
 	
 	
 	
@@ -208,8 +220,9 @@ public class Driver
 	/**
 	 * Main function.
 	 * @param args
+	 * @throws InterruptedException 
 	 */
-	public static void main(String [] args)
+	public static void main(String [] args) throws InterruptedException
 	{
 			
 		
@@ -239,6 +252,10 @@ public class Driver
 		//train
 		trainGames();
 		
+		//playGame(false, false, true);
+		
+		//System.out.println("Current game bounces:  " + myGame.bouncesThisGame());
+		
 		for (int i = 0; i < STATE_REP_SIZE-1; i++)
 		{
 			belowThreshold += numberBelowExploreThreshold(i);
@@ -258,11 +275,27 @@ public class Driver
 		
 		
 		
-		/*
-		playGame(true);
-		System.out.println("Latest:  ");
-		myGame.printBounces();
-		*/
+		if(ENABLE_VISUAL)
+		{
+			int cumulativeBounces = 0;
+			
+			System.out.println("\n\n");
+			
+			for(int i = 0; i < VISUAL_TRIALS; i++)
+			{
+					playGame(false, true);
+					cumulativeBounces += myGame.bouncesThisGame();
+					Thread.sleep(SECONDS_BETWEEN_GAMES*1000);
+					myGame.closeGUI();
+					int gameNo = i+1;
+					System.out.println("Bounces in game  "  + gameNo + ":  "+ myGame.bouncesThisGame());
+			}
+				
+			int average = cumulativeBounces/VISUAL_TRIALS;
+			System.out.println("Averages over games:  " + average);
+		}
+
+		
 		
 	}
 	
@@ -270,16 +303,17 @@ public class Driver
 	
 	/**
 	 * Play a game and record the score.
-	 * 
-	 * @param showAnimation
-	 * @param trainingMode
+	 *
+	 * @param trainingMode		determines if you use the exploration/exploitation tradeoff
+	 * @param displayVisual		show the GUI
+	 * @throws InterruptedException 
 	 */
 	
 	
-	public static void playGame(boolean showAnimation, boolean trainingMode)
+	public static void playGame(boolean trainingMode, boolean displayVisual) throws InterruptedException
 	{
 		//create new game with discrete state representation to calculate properly
-		myGame = new GameSession(MAX_DISCRETE);
+		myGame = new GameSession(MAX_DISCRETE, displayVisual);
 		
 		//set variables for previous state, action, and reward
 		DiscreteState previousState = null;
@@ -307,9 +341,9 @@ public class Driver
 			 */
 			
 			if(hitPaddle)
-				currentReward = 1;
+				currentReward = BIG_REWARD;
 			else if(gameMissed)
-				currentReward = -1;
+				currentReward = BIG_PUNISHMENT;
 			else
 				currentReward = 0;
 			
@@ -376,6 +410,14 @@ public class Driver
 			//determine if ball hits or goes out-of-bounds
 			hitPaddle = myGame.isHit();
 			gameMissed = myGame.checkMiss();
+			
+			
+			if(displayVisual)
+			{
+				myGame.repaintWindow();
+				//Thread.sleep(sleepTime);
+			}
+
 			
 			//assign current state, action, and reward to their corresponding "previous" counterparts
 			previousState = currentState;
@@ -462,14 +504,15 @@ public class Driver
 	
 	/**
 	 * Perform training sessions of the agent and populate training bounce frequency hash table.
+	 * @throws InterruptedException 
 	 */
-	public static void trainGames()
+	public static void trainGames() throws InterruptedException
 	{
 		//train
 		
 		for(int m = 0; m < TRAINING_GAMES; m++)
 		{
-			playGame(false, true);
+			playGame(true, false);
 			int bounces = myGame.bouncesThisGame();
 			
 			if (bounces > maxFreqTraining)
@@ -492,8 +535,9 @@ public class Driver
 	
 	/**
 	 * Perform testing sessions of the agent and populate testing bounce frequency hash table.
+	 * @throws InterruptedException 
 	 */
-	public static void testGames()
+	public static void testGames() throws InterruptedException
 	{
 		
 		//test
