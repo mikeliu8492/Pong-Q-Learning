@@ -7,34 +7,38 @@ public class Driver
 	/*
 	 * Keep this as true to enable viewing of GUI for one game.
 	 * 
+	 * @ENABLE_VISUAL	- let you see visual representation of games in the test trials
+	 * @VISUAL_TRIALS	- number of animated visual test trials of game being played
+	 * @SECOND_BETWEEN_GAMES		- number of seconds betwee the games
+	 * 
 	 * */
 	private static boolean ENABLE_VISUAL = true;
 	private static int VISUAL_TRIALS = 20;
-	private static int SECONDS_BETWEEN_GAMES = 5;
+	private static int SECONDS_BETWEEN_GAMES = 2;
 
 	
 	/**
 	 * Number of discrete rows/columns/paddle position representations you set for your game sessions.
 	 */
-	private static int MAX_DISCRETE = 12;
+	private static int MAX_DISCRETE = 25;
 	
 	
 	/**
 	 * Agent parameters.
 	 * @GAMMA - discount rate to determine how much agent wants to seek more immediate rewards
 	 * @LEARN_RATE - constant to slow decay of alpha parameter.  a slow decay allows the agent to
-	 * 				better incorporate reinforcement in its probability state
+	 * 				better incorporate reinforcement in its state/action utility assessment
 	 * @MAX_ATTEMPT_EXPLORE - threshold for # of times agent would favor taking an action randomly over
-	 * 						  picking max actual utility from given state.  If all three actions are below
-	 * 						  this threshold, then action form state is chosen at random amongst states that 
+	 * 						  picking max actual utility from given state.  If all any of actions are below
+	 * 						  this threshold, then action from state is chosen at random amongst actions that 
 	 * 						  have fewer attempts than this threshold.  Otherwise, action is picked based on
 	 * 						  maximum utility.
 	 * @BIG_REWARD - reward for bouncing on paddle
 	 * @BIG_PUNISHMENT - negative reinforcement for losing the game
 	 */
-	private static double GAMMA = 0.9;
+	private static double GAMMA = 0.2;
 	private static int LEARN_RATE = 100000;
-	private static int MAX_ATTEMPT_EXPLORE = 50;
+	private static int MAX_ATTEMPT_EXPLORE = 20;
 	
 	private static int BIG_REWARD = 1;
 	private static int BIG_PUNISHMENT = -1;
@@ -238,6 +242,8 @@ public class Driver
 		//display your parameters
 		displayParameters();
 	
+		//display your game max speed constraints
+		GameSession.printMaxSpeeds();
 		
 		//initialize Q-table
 		scoreBoard = new UtilScore[STATE_REP_SIZE][3];
@@ -252,9 +258,6 @@ public class Driver
 		//train
 		trainGames();
 		
-		//playGame(false, false, true);
-		
-		//System.out.println("Current game bounces:  " + myGame.bouncesThisGame());
 		
 		for (int i = 0; i < STATE_REP_SIZE-1; i++)
 		{
@@ -262,11 +265,9 @@ public class Driver
 		}
 		
 
-		
-
 		//test
-		testGames();
-		displayResults();
+		testGames(false, TESTING_GAMES);
+		displayResults(TESTING_GAMES);
 		
 		double endTime = System.currentTimeMillis();
 		double minutes = (endTime-startTime)/60000;
@@ -274,27 +275,11 @@ public class Driver
 		System.out.println("Program duration:  " + minutes);
 		
 		
+		System.out.println("\n\n");
+		testGames(ENABLE_VISUAL, VISUAL_TRIALS);
 		
-		if(ENABLE_VISUAL)
-		{
-			int cumulativeBounces = 0;
-			
-			System.out.println("\n\n");
-			
-			for(int i = 0; i < VISUAL_TRIALS; i++)
-			{
-					playGame(false, true);
-					cumulativeBounces += myGame.bouncesThisGame();
-					Thread.sleep(SECONDS_BETWEEN_GAMES*1000);
-					myGame.closeGUI();
-					int gameNo = i+1;
-					System.out.println("Bounces in game  "  + gameNo + ":  "+ myGame.bouncesThisGame());
-			}
-				
-			int average = cumulativeBounces/VISUAL_TRIALS;
-			System.out.println("Averages over games:  " + average);
-		}
-
+		System.out.println("\n\n");
+		displayResults(VISUAL_TRIALS);
 		
 		
 	}
@@ -535,17 +520,29 @@ public class Driver
 	
 	/**
 	 * Perform testing sessions of the agent and populate testing bounce frequency hash table.
+	 * 
+	 * @param visualize		- show the animation
+	 * @param 
+	 * 
 	 * @throws InterruptedException 
 	 */
-	public static void testGames() throws InterruptedException
+	public static void testGames(boolean visualize, int count) throws InterruptedException
 	{
 		
 		//test
-		for(int m = 0; m < TESTING_GAMES; m++)
+		for(int m = 0; m < count; m++)
 		{
-			playGame(false, false);
+			playGame(false, visualize);
 			int bounces = myGame.bouncesThisGame();
 			cumulative += bounces;
+			
+			if(visualize)
+			{
+				Thread.sleep(SECONDS_BETWEEN_GAMES*1000);
+				myGame.closeGUI();
+				int gameNo = m+1;
+				System.out.println("Bounces in game  "  + gameNo + ":  "+ myGame.bouncesThisGame());
+			}
 			
 			if (bounces > maxFreqTesting)
 				maxFreqTesting = bounces;
@@ -609,8 +606,11 @@ public class Driver
 		
 	}
 	
-	
-	public static void displayResults()
+	/**
+	 * 
+	 * @param gameTestNumber		number of games you tested on
+	 */
+	public static void displayResults(int gameTestNumber)
 	{
 		//data for frequency distribution of bounces/game in training set
 		System.out.println("\n\nTraining Set");
@@ -634,8 +634,9 @@ public class Driver
 				System.out.println("Bounces:  " + i + "  Frequency:  " + bounceFrequencyTest.get(i));
 		}
 		
-		System.out.println("\n\n\nAverage Bounces: "  + cumulative/TESTING_GAMES);
-		
+		System.out.println("\n\n\nAverage Bounces: "  + cumulative/gameTestNumber);
+		cumulative = 0;
+		bounceFrequencyTest.clear();
 	}
 
 }

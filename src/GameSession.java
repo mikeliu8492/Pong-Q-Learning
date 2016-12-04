@@ -19,11 +19,14 @@ public class GameSession
 	
 	private static int sleepTime = 50;
 	
+	//cap imposed if max speed is met or exceeded
 	private static double X_VELOCITY_CAP = 0.9;
 	private static double Y_VELOCITY_CAP = 0.9;
 	
-	private static double MAX_VELOCITY_X_TOLERABLE = 0.99;
-	private static double MAX_VELOCITY_Y_TOLERABLE = 0.99;
+	
+	//max speed at which to impose cap
+	private static double MAX_VELOCITY_X_TOLERABLE = 1;
+	private static double MAX_VELOCITY_Y_TOLERABLE = 1;
 	
 	//JFrame and JPanel of GUI
 	private JFrame gameFrame;
@@ -123,7 +126,7 @@ public class GameSession
 				this.xVelocity = newVelocityX(this.xVelocity);
 				
 				//cap the x and y velocities
-				if(Math.abs(this.xVelocity) > MAX_VELOCITY_X_TOLERABLE )
+				if(Math.abs(this.xVelocity) >= MAX_VELOCITY_X_TOLERABLE )
 				{
 					if(this.xVelocity > 0)
 						this.xVelocity = X_VELOCITY_CAP;
@@ -500,11 +503,20 @@ public class GameSession
 		gameGUI.repaint();
 	}
 	
+	/*
+	 * Close the GUI window
+	 */
 	public void closeGUI()
 	{
 		gameFrame.setVisible(false);
 		gameFrame.dispose();
 	}
 	
+	public static void printMaxSpeeds()
+	{
+		System.out.println("\n\nMax X Speed:  " + X_VELOCITY_CAP);
+		System.out.println("Max Y Speed:  " + Y_VELOCITY_CAP);
+		System.out.println("\n");
+	}
 	
 }
