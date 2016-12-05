@@ -13,14 +13,14 @@ public class Driver
 	 * 
 	 * */
 	private static boolean ENABLE_VISUAL = true;
-	private static int VISUAL_TRIALS = 20;
+	private static int VISUAL_TRIALS = 50;
 	private static int SECONDS_BETWEEN_GAMES = 2;
 
 	
 	/**
 	 * Number of discrete rows/columns/paddle position representations you set for your game sessions.
 	 */
-	private static int MAX_DISCRETE = 25;
+	private static int MAX_DISCRETE = 12;
 	
 	
 	/**
