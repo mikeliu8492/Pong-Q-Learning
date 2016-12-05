@@ -5,11 +5,11 @@ import java.util.*;
 public class Driver 
 {
 	/*
-	 * Keep this as true to enable viewing of GUI for one game.
+	 * Keep this as true to enable viewing of GUI for one/multiple games.
 	 * 
 	 * @ENABLE_VISUAL	- let you see visual representation of games in the test trials
 	 * @VISUAL_TRIALS	- number of animated visual test trials of game being played
-	 * @SECOND_BETWEEN_GAMES		- number of seconds betwee the games
+	 * @SECOND_BETWEEN_GAMES		- number of seconds between the games
 	 * 
 	 * */
 	private static boolean ENABLE_VISUAL = true;
